@@ -84,6 +84,20 @@ impl IoUringDriver {
     }
 
     #[cfg(not(feature = "sync"))]
+    pub(crate) fn new_with_uring(uring: IoUring) -> io::Result<IoUringDriver> {
+        let uring = ManuallyDrop::new(uring);
+        let inner = Rc::new(UnsafeCell::new(UringInner {
+            ops: Ops::new(),
+            uring,
+        }));
+
+        Ok(IoUringDriver {
+            inner,
+            timespec: Box::leak(Box::new(Timespec::new())) as *mut Timespec,
+        })
+    }
+
+    #[cfg(not(feature = "sync"))]
     pub(crate) fn new_with_entries(entries: u32) -> io::Result<IoUringDriver> {
         let uring = ManuallyDrop::new(IoUring::new(entries)?);
 
